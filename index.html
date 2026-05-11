@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0B0D" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Apps Manager" />
+  <link rel="manifest" href="/apps/manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/apps/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apps/apple-touch-icon.png" />
+  <title>Apps Manager</title>
+  <style>
+    :root {
+      --bg:#0b0b0d;
+      --bg-soft:#141419;
+      --card:#17171d;
+      --line:#262632;
+      --text:#f4f5f7;
+      --muted:#9ba3b2;
+      --accent:#7cc8df;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+    }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+    body { min-height:100vh; }
+    .wrap { width:min(1120px,100%); margin:0 auto; padding:16px 12px calc(24px + env(safe-area-inset-bottom)); }
+    .top {
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:12px;
+    }
+    .title { display:flex; align-items:center; gap:10px; min-width:0; }
+    .title img { width:30px; height:30px; border-radius:9px; border:1px solid #2d2d39; }
+    h1 { margin:0; font-size:1.06rem; letter-spacing:.01em; white-space:nowrap; }
+    .meta { margin:0 0 12px; color:var(--muted); font-size:.78rem; }
+
+    .btn {
+      appearance:none; border:1px solid #2d3440; background:#1a1f28; color:#e8ecf4;
+      border-radius:10px; padding:10px 12px; font-size:.84rem; font-weight:600; cursor:pointer;
+    }
+    .btn:hover { background:#212836; }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .btn.primary { border-color:#2d5060; background:#17333d; color:#dff7ff; }
+    .btn.primary:hover { background:#1c4250; }
+
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:10px;
+    }
+
+    .card {
+      background:linear-gradient(180deg, #1a1b22, #15151b);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:0;
+    }
+
+    .head { display:flex; align-items:center; gap:10px; min-width:0; }
+    .icon {
+      width:34px; height:34px; border-radius:10px; object-fit:cover; flex:0 0 auto;
+      border:1px solid #30303b; background:#101218;
+    }
+    .name { font-size:.92rem; font-weight:700; line-height:1.15; }
+    .path {
+      margin-top:2px; font-size:.72rem; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      word-break:break-all;
+    }
+
+    .badges { display:flex; flex-wrap:wrap; gap:6px; }
+    .pill {
+      font-size:.68rem; font-weight:700; border-radius:999px; padding:4px 8px; border:1px solid transparent;
+      text-transform:uppercase; letter-spacing:.03em;
+    }
+    .ok { color:var(--ok); background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.35); }
+    .warn { color:var(--warn); background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.35); }
+    .bad { color:var(--bad); background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.35); }
+
+    .actions { display:flex; gap:8px; }
+    .actions .btn { flex:1; padding:9px 10px; font-size:.8rem; }
+    .actions a.btn { text-decoration:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
+
+    #log {
+      margin-top:10px; background:#11141a; border:1px solid #222836; color:#cfd6e4;
+      border-radius:10px; padding:9px 10px; font-size:.76rem; white-space:pre-wrap; min-height:40px;
+    }
+
+    @media (max-width:560px) {
+      .wrap { padding:12px 10px calc(16px + env(safe-area-inset-bottom)); }
+      .top { gap:8px; }
+      h1 { font-size:1rem; }
+      .btn { padding:9px 10px; font-size:.8rem; }
+      .grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <img src="/apps/apple-touch-icon.png" alt="Apps Manager" />
+        <h1>Apps Manager</h1>
+      </div>
+      <button id="refreshBtn" class="btn primary">Refresh</button>
+    </div>
+    <p class="meta" id="updatedAt">Loading…</p>
+
+    <section id="grid" class="grid"></section>
+    <div id="log">Ready.</div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const log = document.getElementById('log');
+    const updatedAt = document.getElementById('updatedAt');
+
+    function cls(ok, warn = false) {
+      if (warn) return 'warn';
+      return ok ? 'ok' : 'bad';
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>'"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[m]));
+    }
+
+    function statusPill(text, ok, warn = false) {
+      return `<span class="pill ${cls(ok, warn)}">${esc(text)}</span>`;
+    }
+
+    async function api(path, opts) {
+      const res = await fetch(path, opts);
+      const text = await res.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch {}
+      if (!res.ok) throw new Error((json && json.error) || text || `HTTP ${res.status}`);
+      return json;
+    }
+
+    function renderCard(app) {
+      const healthText = app.healthCode ? `health ${app.healthCode}` : 'health n/a';
+      const healthWarn = app.healthCode ? !app.healthOk : true;
+
+      return `
+        <article class="card">
+          <div class="head">
+            <img class="icon" src="${esc(app.icon || '/apps/icon-192.png')}" alt="${esc(app.name)} icon" loading="lazy" />
+            <div style="min-width:0;">
+              <div class="name">${esc(app.name)}</div>
+              <div class="path">${esc(app.path)}</div>
+            </div>
+          </div>
+
+          <div class="badges">
+            ${statusPill(app.installed ? 'installed' : 'missing', app.installed)}
+            ${statusPill(app.serviceActive ? 'active' : 'inactive', app.serviceActive)}
+            ${statusPill(app.serviceEnabled ? 'autostart' : 'manual', app.serviceEnabled)}
+            ${statusPill(healthText, app.healthOk, healthWarn)}
+          </div>
+
+          <div class="actions">
+            <a class="btn" href="${esc(app.publicUrl)}" target="_blank" rel="noopener noreferrer">Open</a>
+            <button class="btn" onclick="runAction('${esc(app.id)}','restart')">Restart</button>
+            <button class="btn" ${app.canUpdate ? '' : 'disabled'} onclick="runAction('${esc(app.id)}','update')">Update</button>
+          </div>
+        </article>
+      `;
+    }
+
+    async function load() {
+      try {
+        const data = await api('/apps/api/status');
+        grid.innerHTML = data.apps.map(renderCard).join('');
+        updatedAt.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+      } catch (err) {
+        log.textContent = `Refresh failed: ${err.message}`;
+      }
+    }
+
+    async function runAction(appId, action) {
+      log.textContent = `${action} ${appId}…`;
+      try {
+        const out = await api('/apps/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ appId, action }),
+        });
+        log.textContent = `${action} ${appId}: ${out.ok ? 'done' : 'failed'}\n${out.output || ''}`;
+        await load();
+      } catch (err) {
+        log.textContent = `${action} ${appId} failed: ${err.message}`;
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', load);
+    load();
+    setInterval(load, 15000);
+    window.runAction = runAction;
+  </script>
+</body>
+</html>
