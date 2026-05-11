@@ -73,17 +73,20 @@
       word-break:break-all;
     }
 
-    .badges { display:flex; flex-wrap:wrap; gap:6px; }
-    .pill {
-      font-size:.68rem; font-weight:700; border-radius:999px; padding:4px 8px; border:1px solid transparent;
-      text-transform:uppercase; letter-spacing:.03em;
-    }
-    .ok { color:var(--ok); background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.35); }
-    .warn { color:var(--warn); background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.35); }
-    .bad { color:var(--bad); background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.35); }
+    .status-row { display:flex; align-items:center; gap:8px; }
+    .state-dot { width:9px; height:9px; border-radius:999px; flex:0 0 auto; }
+    .state-label { font-size:.76rem; font-weight:700; letter-spacing:.02em; }
+    .state-good { color:var(--ok); }
+    .state-good .state-dot { background:var(--ok); box-shadow:0 0 0 4px rgba(34,197,94,.12); }
+    .state-warn { color:var(--warn); }
+    .state-warn .state-dot { background:var(--warn); box-shadow:0 0 0 4px rgba(245,158,11,.12); }
+    .state-bad { color:var(--bad); }
+    .state-bad .state-dot { background:var(--bad); box-shadow:0 0 0 4px rgba(239,68,68,.12); }
+    .status-meta { font-size:.72rem; color:var(--muted); }
 
-    .actions { display:flex; gap:8px; }
-    .actions .btn { flex:1; padding:9px 10px; font-size:.8rem; }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .actions .btn { min-height:44px; padding:11px 10px; font-size:.82rem; border-radius:12px; }
+    .actions .open { grid-column:1 / -1; }
     .actions a.btn { text-decoration:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
 
     #log {
@@ -120,17 +123,16 @@
     const log = document.getElementById('log');
     const updatedAt = document.getElementById('updatedAt');
 
-    function cls(ok, warn = false) {
-      if (warn) return 'warn';
-      return ok ? 'ok' : 'bad';
-    }
-
     function esc(s) {
       return String(s ?? '').replace(/[&<>'"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[m]));
     }
 
-    function statusPill(text, ok, warn = false) {
-      return `<span class="pill ${cls(ok, warn)}">${esc(text)}</span>`;
+    function stateFor(app) {
+      if (!app.installed) return { cls: 'state-bad', label: 'Missing' };
+      if (!app.serviceActive) return { cls: 'state-bad', label: 'Down' };
+      if (app.healthCode && !app.healthOk) return { cls: 'state-warn', label: 'Degraded' };
+      if (!app.serviceEnabled) return { cls: 'state-warn', label: 'Manual start' };
+      return { cls: 'state-good', label: 'Ready' };
     }
 
     async function api(path, opts) {
@@ -143,8 +145,10 @@
     }
 
     function renderCard(app) {
+      const state = stateFor(app);
       const healthText = app.healthCode ? `health ${app.healthCode}` : 'health n/a';
-      const healthWarn = app.healthCode ? !app.healthOk : true;
+      const modeText = app.serviceEnabled ? 'autostart' : 'manual';
+      const runText = app.serviceActive ? 'active' : 'inactive';
 
       return `
         <article class="card">
@@ -156,15 +160,17 @@
             </div>
           </div>
 
-          <div class="badges">
-            ${statusPill(app.installed ? 'installed' : 'missing', app.installed)}
-            ${statusPill(app.serviceActive ? 'active' : 'inactive', app.serviceActive)}
-            ${statusPill(app.serviceEnabled ? 'autostart' : 'manual', app.serviceEnabled)}
-            ${statusPill(healthText, app.healthOk, healthWarn)}
+          <div class="status-row ${state.cls}">
+            <span class="state-dot"></span>
+            <span class="state-label">${state.label}</span>
+          </div>
+
+          <div class="status-meta">
+            ${runText} • ${modeText} • ${healthText}
           </div>
 
           <div class="actions">
-            <a class="btn" href="${esc(app.publicUrl)}" target="_blank" rel="noopener noreferrer">Open</a>
+            <a class="btn open" href="${esc(app.publicUrl)}" target="_blank" rel="noopener noreferrer">Open</a>
             <button class="btn" onclick="runAction('${esc(app.id)}','restart')">Restart</button>
             <button class="btn" ${app.canUpdate ? '' : 'disabled'} onclick="runAction('${esc(app.id)}','update')">Update</button>
           </div>
