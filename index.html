@@ -67,14 +67,15 @@
       min-width:0;
     }
 
-    .head { display:flex; align-items:center; gap:10px; min-width:0; }
+    .head { display:flex; align-items:flex-start; gap:10px; min-width:0; }
+    .head-main { min-width:0; flex:1; }
     .icon {
       width:34px; height:34px; border-radius:10px; object-fit:cover; flex:0 0 auto;
       border:1px solid #30303b; background:#101218;
     }
     .name { font-size:.92rem; font-weight:700; line-height:1.15; }
     .path {
-      margin-top:2px; font-size:.72rem; color:var(--muted);
+      margin-top:2px; font-size:.7rem; color:var(--muted);
       font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
       word-break:break-all;
     }
@@ -94,14 +95,14 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      min-height:24px;
-      font-size:.74rem;
+      min-height:20px;
+      font-size:.72rem;
       color:var(--muted);
     }
     .update-ok { color:var(--ok); }
     .update-warn { color:var(--warn); }
     .update-bad { color:var(--bad); }
-    .legend { margin:-4px 0 12px; font-size:.72rem; color:#8d99ad; line-height:1.4; }
+    .legend { margin:-4px 0 10px; font-size:.71rem; color:#8d99ad; line-height:1.35; }
 
     .toggle {
       position:relative;
@@ -130,9 +131,34 @@
     .toggle.on .thumb { transform:translateX(20px); }
     .toggle:disabled { opacity:.45; }
 
-    .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .actions .btn { min-height:44px; padding:11px 10px; font-size:.82rem; border-radius:12px; }
-    .actions .open { grid-column:1 / -1; text-decoration:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
+    .toggle.mini {
+      width:36px;
+      height:20px;
+      border-radius:999px;
+    }
+    .toggle.mini .thumb {
+      top:1px;
+      left:1px;
+      width:16px;
+      height:16px;
+    }
+    .toggle.mini.on .thumb { transform:translateX(16px); }
+
+    .head-autostart {
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      color:#8694aa;
+      font-size:.62rem;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      flex-shrink:0;
+    }
+
+    .actions { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; }
+    .actions .btn { min-height:38px; padding:8px 8px; font-size:.76rem; border-radius:10px; }
+    .actions .open { text-decoration:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
 
     #log {
       margin-top:10px; background:#11141a; border:1px solid #222836; color:#cfd6e4;
@@ -156,7 +182,7 @@
       <button id="refreshBtn" class="btn primary">Sync</button>
     </div>
     <p class="meta" id="updatedAt">Loading…</p>
-    <p class="legend">Update checks app code only. <strong>Up to date</strong> means nothing newer on GitHub. <strong>Update available</strong> means click Update to pull latest app code. Your app data stays local.</p>
+    <p class="legend">Update pulls the latest app code from GitHub. Your app data stays local.</p>
 
     <section id="groups"></section>
     <div id="log">Ready.</div>
@@ -181,13 +207,13 @@
     function updateFor(app) {
       const g = app.git || {};
       if (!app.canUpdate || !g.tracked || !g.canCheck) {
-        return { text: 'Up to date', cls: 'update-ok', canUpdate:false, updateLabel:'Up to date' };
+        return { canUpdate:false, updateLabel:'Latest' };
       }
       const behind = Number(g.behind || 0);
       if (behind > 0) {
-        return { text: 'Update available', cls: 'update-warn', canUpdate:true, updateLabel:'Update' };
+        return { canUpdate:true, updateLabel:'Update' };
       }
-      return { text: 'Up to date', cls: 'update-ok', canUpdate:false, updateLabel:'Up to date' };
+      return { canUpdate:false, updateLabel:'Latest' };
     }
 
     async function api(path, opts) {
@@ -208,33 +234,27 @@
         <article class="card">
           <div class="head">
             <img class="icon" src="${esc(app.icon || '/apps/icon-192.png')}" alt="${esc(app.name)} icon" loading="lazy" />
-            <div style="min-width:0;">
+            <div class="head-main">
               <div class="name">${esc(app.name)}</div>
               <div class="path">${esc(app.path)}</div>
+            </div>
+            <div class="head-autostart" title="Auto-start">
+              <span>A</span>
+              <button class="toggle mini ${app.serviceEnabled ? 'on' : ''}" ${toggleDisabled ? 'disabled' : ''} onclick="toggleAutostart('${esc(app.id)}', ${app.serviceEnabled ? 'false' : 'true'})" aria-label="Toggle auto-start for ${esc(app.name)}">
+                <span class="thumb"></span>
+              </button>
             </div>
           </div>
 
           <div class="status-row ${state.cls}">
             <span class="state-dot"></span>
-            <span class="state-label">${state.label}</span>
-          </div>
-
-          <div class="meta-row">
-            <span>Auto-start</span>
-            <button class="toggle ${app.serviceEnabled ? 'on' : ''}" ${toggleDisabled ? 'disabled' : ''} onclick="toggleAutostart('${esc(app.id)}', ${app.serviceEnabled ? 'false' : 'true'})" aria-label="Toggle auto-start for ${esc(app.name)}">
-              <span class="thumb"></span>
-            </button>
-          </div>
-
-          <div class="meta-row">
-            <span>Update</span>
-            <span class="${update.cls}">${esc(update.text)}</span>
+            <span class="state-label">${state.label}${update.canUpdate ? ' • Update available' : ''}</span>
           </div>
 
           <div class="actions">
             <a class="btn open" href="${esc(app.publicUrl)}" target="_blank" rel="noopener noreferrer">Open</a>
             <button class="btn" onclick="runAction('${esc(app.id)}','restart')">Restart</button>
-            <button class="btn" ${update.canUpdate ? '' : 'disabled'} onclick="runAction('${esc(app.id)}','update')">${esc(update.updateLabel)}</button>
+            <button class="btn ${update.canUpdate ? 'primary' : ''}" ${update.canUpdate ? '' : 'disabled'} onclick="runAction('${esc(app.id)}','update')">${esc(update.updateLabel)}</button>
           </div>
         </article>
       `;
