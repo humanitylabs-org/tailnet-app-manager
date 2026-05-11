@@ -13,28 +13,35 @@
   <style>
     :root {
       --bg:#0b0b0d;
-      --bg-soft:#141419;
       --card:#17171d;
       --line:#262632;
       --text:#f4f5f7;
       --muted:#9ba3b2;
-      --accent:#7cc8df;
       --ok:#22c55e;
       --warn:#f59e0b;
       --bad:#ef4444;
+      --btn:#1a1f28;
+      --btn-line:#2d3440;
     }
     * { box-sizing:border-box; }
     html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
     body { min-height:100vh; }
-    .wrap { width:min(1120px,100%); margin:0 auto; padding:16px 12px calc(24px + env(safe-area-inset-bottom)); }
-    .top {
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-bottom:12px;
-    }
+
+    .wrap { width:min(1120px,100%); margin:0 auto; padding:14px 12px calc(22px + env(safe-area-inset-bottom)); }
+    .top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
     .title { display:flex; align-items:center; gap:10px; min-width:0; }
     .title img { width:30px; height:30px; border-radius:9px; border:1px solid #2d2d39; }
-    h1 { margin:0; font-size:1.06rem; letter-spacing:.01em; white-space:nowrap; }
+    h1 { margin:0; font-size:1.02rem; letter-spacing:.01em; white-space:nowrap; }
     .meta { margin:0 0 12px; color:var(--muted); font-size:.78rem; }
+
+    .btn {
+      appearance:none; border:1px solid var(--btn-line); background:var(--btn); color:#e8ecf4;
+      border-radius:11px; min-height:44px; padding:11px 12px; font-size:.83rem; font-weight:650; cursor:pointer;
+    }
+    .btn:hover { background:#212836; }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .btn.primary { border-color:#2d5060; background:#17333d; color:#dff7ff; }
+    .btn.primary:hover { background:#1c4250; }
 
     .group { margin-bottom:16px; }
     .group:last-of-type { margin-bottom:0; }
@@ -48,21 +55,7 @@
     }
     .group-desc { margin:0 0 10px; color:var(--muted); font-size:.76rem; line-height:1.45; }
 
-    .btn {
-      appearance:none; border:1px solid #2d3440; background:#1a1f28; color:#e8ecf4;
-      border-radius:10px; padding:10px 12px; font-size:.84rem; font-weight:600; cursor:pointer;
-    }
-    .btn:hover { background:#212836; }
-    .btn:disabled { opacity:.45; cursor:not-allowed; }
-    .btn.primary { border-color:#2d5060; background:#17333d; color:#dff7ff; }
-    .btn.primary:hover { background:#1c4250; }
-
-    .grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-      gap:10px;
-    }
-
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(246px,1fr)); gap:10px; }
     .card {
       background:linear-gradient(180deg, #1a1b22, #15151b);
       border:1px solid var(--line);
@@ -81,25 +74,64 @@
     }
     .name { font-size:.92rem; font-weight:700; line-height:1.15; }
     .path {
-      margin-top:2px; font-size:.72rem; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      margin-top:2px; font-size:.72rem; color:var(--muted);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
       word-break:break-all;
     }
 
     .status-row { display:flex; align-items:center; gap:8px; }
     .state-dot { width:9px; height:9px; border-radius:999px; flex:0 0 auto; }
-    .state-label { font-size:.76rem; font-weight:700; letter-spacing:.02em; }
+    .state-label { font-size:.77rem; font-weight:700; letter-spacing:.02em; }
     .state-good { color:var(--ok); }
     .state-good .state-dot { background:var(--ok); box-shadow:0 0 0 4px rgba(34,197,94,.12); }
     .state-warn { color:var(--warn); }
     .state-warn .state-dot { background:var(--warn); box-shadow:0 0 0 4px rgba(245,158,11,.12); }
     .state-bad { color:var(--bad); }
     .state-bad .state-dot { background:var(--bad); box-shadow:0 0 0 4px rgba(239,68,68,.12); }
-    .status-meta { font-size:.72rem; color:var(--muted); }
+
+    .meta-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      min-height:24px;
+      font-size:.74rem;
+      color:var(--muted);
+    }
+    .update-ok { color:var(--ok); }
+    .update-warn { color:var(--warn); }
+    .update-bad { color:var(--bad); }
+
+    .toggle {
+      position:relative;
+      width:46px;
+      height:26px;
+      border-radius:999px;
+      border:1px solid #384052;
+      background:#212838;
+      transition:.2s ease;
+      flex:0 0 auto;
+    }
+    .toggle.on {
+      background:rgba(34,197,94,.24);
+      border-color:rgba(34,197,94,.45);
+    }
+    .toggle .thumb {
+      position:absolute;
+      top:2px;
+      left:2px;
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:#dfe4ef;
+      transition:.2s ease;
+    }
+    .toggle.on .thumb { transform:translateX(20px); }
+    .toggle:disabled { opacity:.45; }
 
     .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .actions .btn { min-height:44px; padding:11px 10px; font-size:.82rem; border-radius:12px; }
-    .actions .open { grid-column:1 / -1; }
-    .actions a.btn { text-decoration:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
+    .actions .open { grid-column:1 / -1; text-decoration:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
 
     #log {
       margin-top:10px; background:#11141a; border:1px solid #222836; color:#cfd6e4;
@@ -108,9 +140,7 @@
 
     @media (max-width:560px) {
       .wrap { padding:12px 10px calc(16px + env(safe-area-inset-bottom)); }
-      .top { gap:8px; }
       h1 { font-size:1rem; }
-      .btn { padding:9px 10px; font-size:.8rem; }
       .grid { grid-template-columns:1fr; }
     }
   </style>
@@ -122,7 +152,7 @@
         <img src="/apps/apple-touch-icon.png" alt="Apps Manager" />
         <h1>Apps Manager</h1>
       </div>
-      <button id="refreshBtn" class="btn primary">Refresh</button>
+      <button id="refreshBtn" class="btn primary">Sync</button>
     </div>
     <p class="meta" id="updatedAt">Loading…</p>
 
@@ -142,9 +172,21 @@
     function stateFor(app) {
       if (!app.installed) return { cls: 'state-bad', label: 'Missing' };
       if (!app.serviceActive) return { cls: 'state-bad', label: 'Down' };
-      if (app.healthCode && !app.healthOk) return { cls: 'state-warn', label: 'Degraded' };
-      if (!app.serviceEnabled) return { cls: 'state-warn', label: 'Manual start' };
-      return { cls: 'state-good', label: 'Ready' };
+      if (!app.healthOk) return { cls: 'state-warn', label: 'Needs attention' };
+      return { cls: 'state-good', label: 'Healthy' };
+    }
+
+    function updateFor(app) {
+      const g = app.git || {};
+      if (!app.canUpdate) return { text: 'No updater', cls: '' , canUpdate:false, updateLabel:'Update' };
+      if (!g.tracked || !g.canCheck) return { text: 'No tracked upstream', cls: 'update-warn', canUpdate:false, updateLabel:'Update' };
+      if (g.dirty) return { text: 'Local changes', cls: 'update-warn', canUpdate:false, updateLabel:'Local changes' };
+      if (g.diverged || (g.ahead || 0) > 0) return { text: 'Diverged', cls: 'update-bad', canUpdate:false, updateLabel:'Diverged' };
+      if (g.updateAvailable) {
+        const count = Number(g.behind || 0);
+        return { text: `${count} update${count === 1 ? '' : 's'} available`, cls: 'update-warn', canUpdate:true, updateLabel:`Update (${count})` };
+      }
+      return { text: 'Up to date', cls: 'update-ok', canUpdate:false, updateLabel:'Up to date' };
     }
 
     async function api(path, opts) {
@@ -158,9 +200,8 @@
 
     function renderCard(app) {
       const state = stateFor(app);
-      const healthText = app.healthCode ? `health ${app.healthCode}` : 'health n/a';
-      const modeText = app.serviceEnabled ? 'autostart' : 'manual';
-      const runText = app.serviceActive ? 'active' : 'inactive';
+      const update = updateFor(app);
+      const toggleDisabled = !app.canToggleAutostart;
 
       return `
         <article class="card">
@@ -177,14 +218,22 @@
             <span class="state-label">${state.label}</span>
           </div>
 
-          <div class="status-meta">
-            ${runText} • ${modeText} • ${healthText}
+          <div class="meta-row">
+            <span>Auto-start</span>
+            <button class="toggle ${app.serviceEnabled ? 'on' : ''}" ${toggleDisabled ? 'disabled' : ''} onclick="toggleAutostart('${esc(app.id)}', ${app.serviceEnabled ? 'false' : 'true'})" aria-label="Toggle auto-start for ${esc(app.name)}">
+              <span class="thumb"></span>
+            </button>
+          </div>
+
+          <div class="meta-row">
+            <span>Update</span>
+            <span class="${update.cls}">${esc(update.text)}</span>
           </div>
 
           <div class="actions">
             <a class="btn open" href="${esc(app.publicUrl)}" target="_blank" rel="noopener noreferrer">Open</a>
             <button class="btn" onclick="runAction('${esc(app.id)}','restart')">Restart</button>
-            <button class="btn" ${app.canUpdate ? '' : 'disabled'} onclick="runAction('${esc(app.id)}','update')">Update</button>
+            <button class="btn" ${update.canUpdate ? '' : 'disabled'} onclick="runAction('${esc(app.id)}','update')">${esc(update.updateLabel)}</button>
           </div>
         </article>
       `;
@@ -195,27 +244,25 @@
         <section class="group">
           <p class="group-label">${esc(group.label)}</p>
           <p class="group-desc">${esc(group.description)}</p>
-          <div class="grid">
-            ${apps.map(renderCard).join('')}
-          </div>
+          <div class="grid">${apps.map(renderCard).join('')}</div>
         </section>
       `;
     }
 
-    async function load() {
+    async function load(force = false) {
       try {
-        const data = await api('/apps/api/status');
+        const data = await api(`/apps/api/status${force ? '?refresh=1' : ''}`);
         const groups = data.groups || {};
         const byGroup = {
           custom: data.apps.filter(app => app.group === 'custom'),
           base: data.apps.filter(app => app.group === 'base'),
         };
 
-        const ordered = [];
-        if (groups.custom && byGroup.custom.length) ordered.push(renderGroup(groups.custom, byGroup.custom));
-        if (groups.base && byGroup.base.length) ordered.push(renderGroup(groups.base, byGroup.base));
+        const out = [];
+        if (groups.custom && byGroup.custom.length) out.push(renderGroup(groups.custom, byGroup.custom));
+        if (groups.base && byGroup.base.length) out.push(renderGroup(groups.base, byGroup.base));
 
-        groupsEl.innerHTML = ordered.join('');
+        groupsEl.innerHTML = out.join('');
         updatedAt.textContent = `Updated ${new Date().toLocaleTimeString()}`;
       } catch (err) {
         log.textContent = `Refresh failed: ${err.message}`;
@@ -231,16 +278,32 @@
           body: JSON.stringify({ appId, action }),
         });
         log.textContent = `${action} ${appId}: ${out.ok ? 'done' : 'failed'}\n${out.output || ''}`;
-        await load();
+        await load(true);
       } catch (err) {
         log.textContent = `${action} ${appId} failed: ${err.message}`;
       }
     }
 
-    document.getElementById('refreshBtn').addEventListener('click', load);
-    load();
-    setInterval(load, 15000);
+    async function toggleAutostart(appId, enabled) {
+      log.textContent = `${enabled ? 'enable' : 'disable'} autostart ${appId}…`;
+      try {
+        const out = await api('/apps/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ appId, action: 'setAutostart', enabled }),
+        });
+        log.textContent = `autostart ${appId}: ${out.ok ? 'done' : 'failed'}\n${out.output || ''}`;
+        await load(true);
+      } catch (err) {
+        log.textContent = `autostart ${appId} failed: ${err.message}`;
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => load(true));
+    load(true);
+    setInterval(() => load(false), 20000);
     window.runAction = runAction;
+    window.toggleAutostart = toggleAutostart;
   </script>
 </body>
 </html>
