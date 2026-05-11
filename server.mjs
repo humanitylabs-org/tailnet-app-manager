@@ -13,14 +13,29 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname));
 const INDEX_PATH = path.join(ROOT, 'index.html');
 const TAILNET_BASE = process.env.TAILNET_BASE_URL || 'https://srv1499816.tail6adf1a.ts.net';
 
+const GROUPS = {
+  custom: {
+    id: 'custom',
+    label: 'Custom Apps',
+    description: 'Designed and fully built by Humanity Labs.',
+  },
+  base: {
+    id: 'base',
+    label: 'Base Tailnet Apps',
+    description: 'Baseline services using our Tailnet app template.',
+  },
+};
+
 const APPS = [
-  { id:'mizel', name:'Mizel', path:'/mizel', service:'mizel-local.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/mizel', healthUrl:'http://127.0.0.1:8791/mizel', canUpdate:true, icon:'/apps/assets/app-mizel.png' },
-  { id:'clawtabs', name:'ClawTabs', path:'/clawtabs', service:'clawtabs.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/claw-tabs', healthUrl:'http://127.0.0.1:8788/clawtabs/api/health', canUpdate:true, icon:'/apps/assets/app-clawtabs.png' },
-  { id:'mindfeed', name:'MindFeed', path:'/mindfeed', service:'mindfeed.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/mindfeed', healthUrl:'http://127.0.0.1:8787/mindfeed', canUpdate:true, icon:'/apps/assets/app-mindfeed.png' },
-  { id:'browser', name:'Browser', path:'/browser', service:'remote-browser.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/tailnet-browser', healthUrl:'http://127.0.0.1:6080', canUpdate:true, icon:'/apps/assets/app-browser.png' },
-  { id:'terminal', name:'Terminal', path:'/terminal', service:'web-terminal.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/tailnet-terminal', healthUrl:'http://127.0.0.1:7681', canUpdate:true, icon:'/apps/assets/app-terminal.png' },
-  { id:'bookcompressor', name:'BookCompressor', path:'/bookcompressor', service:'bookcompressor.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/book-compressor', healthUrl:'http://127.0.0.1:3000/bookcompressor/api/health', canUpdate:true, icon:'/apps/assets/app-bookcompressor.png' },
-  { id:'mizelstt', name:'MizelSTT', path:'/mizel-stt', service:'mizel-stt.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/mizel-local-stt', healthUrl:'http://127.0.0.1:9099/docs', canUpdate:true, icon:'/apps/assets/app-mizelstt.png' },
+  { id:'appsmanager', group:'custom', name:'Apps Manager', path:'/apps', service:'apps-manager.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/tailnet-app-manager', healthUrl:'http://127.0.0.1:8786/apps/api/health', canUpdate:true, icon:'/apps/assets/app-appsmanager.png' },
+  { id:'mizel', group:'custom', name:'Mizel', path:'/mizel', service:'mizel-local.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/mizel', healthUrl:'http://127.0.0.1:8791/mizel', canUpdate:true, icon:'/apps/assets/app-mizel.png' },
+  { id:'mindfeed', group:'custom', name:'MindFeed', path:'/mindfeed', service:'mindfeed.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/mindfeed', healthUrl:'http://127.0.0.1:8787/mindfeed', canUpdate:true, icon:'/apps/assets/app-mindfeed.png' },
+  { id:'bookcompressor', group:'custom', name:'BookCompressor', path:'/bookcompressor', service:'bookcompressor.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/book-compressor', healthUrl:'http://127.0.0.1:3000/bookcompressor/api/health', canUpdate:true, icon:'/apps/assets/app-bookcompressor.png' },
+  { id:'clawtabs', group:'custom', name:'ClawTabs', path:'/clawtabs', service:'clawtabs.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/claw-tabs', healthUrl:'http://127.0.0.1:8788/clawtabs/api/health', canUpdate:true, icon:'/apps/assets/app-clawtabs.png' },
+  { id:'browser', group:'base', name:'Browser', path:'/browser', service:'remote-browser.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/tailnet-browser', healthUrl:'http://127.0.0.1:6080', canUpdate:true, icon:'/apps/assets/app-browser.png' },
+  { id:'terminal', group:'base', name:'Terminal', path:'/terminal', service:'web-terminal.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/tailnet-terminal', healthUrl:'http://127.0.0.1:7681', canUpdate:true, icon:'/apps/assets/app-terminal.png' },
+  { id:'localstt', group:'base', name:'LocalSTT', path:'/stt', service:'local-stt.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/mizel-local-stt', healthUrl:'http://127.0.0.1:9099/health', canUpdate:true, icon:'/apps/assets/app-mizelstt.png' },
+  { id:'localllm', group:'base', name:'LocalLLM', path:'/llm/v1/models', service:'local-llm.service', repoPath:'/root/.openclaw/workspace/AGENT-OSCAR/Code/mizel-local-llm', healthUrl:'http://127.0.0.1:9098/v1/models', canUpdate:true, icon:'/apps/assets/app-appsmanager.png' },
 ];
 
 const MIME = {
@@ -157,7 +172,7 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === `${BASE}/api/status`) {
       const apps = await Promise.all(APPS.map(appStatus));
-      return send(res, 200, JSON.stringify({ ok:true, apps }), { 'Content-Type': MIME['.json'] });
+      return send(res, 200, JSON.stringify({ ok:true, apps, groups: GROUPS }), { 'Content-Type': MIME['.json'] });
     }
 
     if (pathname === `${BASE}/api/action`) {
