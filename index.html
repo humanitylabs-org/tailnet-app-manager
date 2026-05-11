@@ -36,6 +36,18 @@
     h1 { margin:0; font-size:1.06rem; letter-spacing:.01em; white-space:nowrap; }
     .meta { margin:0 0 12px; color:var(--muted); font-size:.78rem; }
 
+    .group { margin-bottom:16px; }
+    .group:last-of-type { margin-bottom:0; }
+    .group-label {
+      margin:0 0 4px;
+      font-size:.72rem;
+      letter-spacing:.13em;
+      text-transform:uppercase;
+      color:#7f8fa9;
+      font-weight:700;
+    }
+    .group-desc { margin:0 0 10px; color:var(--muted); font-size:.76rem; line-height:1.45; }
+
     .btn {
       appearance:none; border:1px solid #2d3440; background:#1a1f28; color:#e8ecf4;
       border-radius:10px; padding:10px 12px; font-size:.84rem; font-weight:600; cursor:pointer;
@@ -114,12 +126,12 @@
     </div>
     <p class="meta" id="updatedAt">Loading…</p>
 
-    <section id="grid" class="grid"></section>
+    <section id="groups"></section>
     <div id="log">Ready.</div>
   </div>
 
   <script>
-    const grid = document.getElementById('grid');
+    const groupsEl = document.getElementById('groups');
     const log = document.getElementById('log');
     const updatedAt = document.getElementById('updatedAt');
 
@@ -178,10 +190,32 @@
       `;
     }
 
+    function renderGroup(group, apps) {
+      return `
+        <section class="group">
+          <p class="group-label">${esc(group.label)}</p>
+          <p class="group-desc">${esc(group.description)}</p>
+          <div class="grid">
+            ${apps.map(renderCard).join('')}
+          </div>
+        </section>
+      `;
+    }
+
     async function load() {
       try {
         const data = await api('/apps/api/status');
-        grid.innerHTML = data.apps.map(renderCard).join('');
+        const groups = data.groups || {};
+        const byGroup = {
+          custom: data.apps.filter(app => app.group === 'custom'),
+          base: data.apps.filter(app => app.group === 'base'),
+        };
+
+        const ordered = [];
+        if (groups.custom && byGroup.custom.length) ordered.push(renderGroup(groups.custom, byGroup.custom));
+        if (groups.base && byGroup.base.length) ordered.push(renderGroup(groups.base, byGroup.base));
+
+        groupsEl.innerHTML = ordered.join('');
         updatedAt.textContent = `Updated ${new Date().toLocaleTimeString()}`;
       } catch (err) {
         log.textContent = `Refresh failed: ${err.message}`;
