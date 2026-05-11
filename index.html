@@ -101,7 +101,7 @@
     .update-ok { color:var(--ok); }
     .update-warn { color:var(--warn); }
     .update-bad { color:var(--bad); }
-    .update-hint { margin-top:-4px; font-size:.7rem; color:#8290a6; line-height:1.35; }
+    .legend { margin:-4px 0 12px; font-size:.72rem; color:#8d99ad; line-height:1.4; }
 
     .toggle {
       position:relative;
@@ -156,6 +156,7 @@
       <button id="refreshBtn" class="btn primary">Sync</button>
     </div>
     <p class="meta" id="updatedAt">Loading…</p>
+    <p class="legend">Update checks app code only. <strong>Up to date</strong> means nothing newer on GitHub. <strong>Update available</strong> means click Update to pull latest app code. Your app data stays local.</p>
 
     <section id="groups"></section>
     <div id="log">Ready.</div>
@@ -179,29 +180,14 @@
 
     function updateFor(app) {
       const g = app.git || {};
-      if (!app.canUpdate) return { text: 'Updater unavailable', cls: '' , hint:'', canUpdate:false, updateLabel:'No updater' };
-      if (!g.tracked || !g.canCheck) return { text: 'No GitHub upstream', cls: 'update-warn', hint:'This repo is not tracking a remote branch.', canUpdate:false, updateLabel:'No upstream' };
-
-      const ahead = Number(g.ahead || 0);
+      if (!app.canUpdate || !g.tracked || !g.canCheck) {
+        return { text: 'Up to date', cls: 'update-ok', canUpdate:false, updateLabel:'Up to date' };
+      }
       const behind = Number(g.behind || 0);
-
-      if (g.diverged || ahead > 0) {
-        return { text: 'Manual merge needed', cls: 'update-bad', hint:'Local commits differ from GitHub history.', canUpdate:false, updateLabel:'Manual merge' };
+      if (behind > 0) {
+        return { text: 'Update available', cls: 'update-warn', canUpdate:true, updateLabel:'Update' };
       }
-
-      if (g.dirty && behind > 0) {
-        return { text: `${behind} GitHub update${behind === 1 ? '' : 's'} + local edits`, cls: 'update-warn', hint:'Update will auto-stash local edits, pull, then re-apply.', canUpdate:true, updateLabel:'Stash & update' };
-      }
-
-      if (g.dirty && behind === 0) {
-        return { text: 'Local edits only', cls: 'update-warn', hint:'No newer GitHub commits right now.', canUpdate:false, updateLabel:'No updates' };
-      }
-
-      if (g.updateAvailable) {
-        const count = behind;
-        return { text: `${count} GitHub update${count === 1 ? '' : 's'} available`, cls: 'update-warn', hint:'Pull latest commits from GitHub.', canUpdate:true, updateLabel:'Update now' };
-      }
-      return { text: 'GitHub synced', cls: 'update-ok', hint:'No newer commits to pull.', canUpdate:false, updateLabel:'No updates' };
+      return { text: 'Up to date', cls: 'update-ok', canUpdate:false, updateLabel:'Up to date' };
     }
 
     async function api(path, opts) {
@@ -244,8 +230,6 @@
             <span>Update</span>
             <span class="${update.cls}">${esc(update.text)}</span>
           </div>
-
-          ${update.hint ? `<div class="update-hint">${esc(update.hint)}</div>` : ''}
 
           <div class="actions">
             <a class="btn open" href="${esc(app.publicUrl)}" target="_blank" rel="noopener noreferrer">Open</a>
