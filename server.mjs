@@ -263,18 +263,22 @@ async function handleUpdate(app, logs) {
   if (!gitState.tracked || !gitState.canCheck) {
     throw new Error('Update check unavailable for this app (no tracked upstream branch).');
   }
-  if (gitState.dirty) {
-    throw new Error('Local changes detected. Commit/stash/revert before updating.');
-  }
   if (gitState.diverged || gitState.ahead > 0) {
     throw new Error('Local repo diverged from upstream. Resolve manually before using Update.');
+  }
+  if (gitState.dirty && gitState.behind === 0) {
+    throw new Error('Local changes only (no newer GitHub commits). Commit/stash/revert locally first.');
   }
   if (gitState.behind === 0) {
     logs.push('Already up to date.');
     return;
   }
 
-  const pull = await git(app.repoPath, ['pull', '--ff-only'], { timeout: 180000, maxBuffer: 4_000_000 });
+  const pullArgs = gitState.dirty
+    ? ['pull', '--rebase', '--autostash']
+    : ['pull', '--ff-only'];
+
+  const pull = await git(app.repoPath, pullArgs, { timeout: 180000, maxBuffer: 4_000_000 });
   logs.push(`git pull: ${pull.ok ? 'ok' : 'failed'}`);
   if (pull.out) logs.push(pull.out);
   if (pull.err) logs.push(pull.err);
