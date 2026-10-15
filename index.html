@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#090C12" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Wizard Apps" />
+  <meta name="apple-mobile-web-app-title" content="Legacy apps" />
   <link rel="manifest" href="/apps/manifest.webmanifest" crossorigin="use-credentials" />
   <link rel="icon" type="image/png" sizes="192x192" href="/apps/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apps/apple-touch-icon.png" />
-  <title>Wizard Apps Manager</title>
+  <title>Legacy apps</title>
   <style>
     :root {
       --bg:#090c12;
@@ -423,8 +423,8 @@
   <div class="wrap">
     <header class="top">
       <div class="brand">
-        <img src="/apps/apple-touch-icon.png" alt="Wizard Apps" />
-        <h1>Wizard Apps</h1>
+        <img src="/apps/apple-touch-icon.png" alt="Legacy apps" />
+        <h1>Legacy apps</h1>
       </div>
       <div class="sync-block">
         <div class="synced" id="updatedAt">syncing</div>
@@ -432,9 +432,10 @@
       </div>
     </header>
 
+    <p>This older app directory is being retired. <a href="/wizard-os-home/">Open Wizard</a> for your current apps and chats.</p>
     <div id="installBanner" class="install-banner" hidden>
       <div class="install-copy">
-        <strong>Install Wizard Apps</strong>
+        <strong>Install Legacy apps</strong>
         <span>Open it from your home screen as a standalone app.</span>
       </div>
       <button id="installBtn" class="btn primary" type="button">Install app</button>
@@ -451,7 +452,7 @@
     </div>
 
     <main class="main-shell">
-      <section id="appsSurface" class="apps-surface list" aria-label="Wizard apps"></section>
+      <section id="appsSurface" class="apps-surface list" aria-label="Legacy apps"></section>
       <div id="detailBackdrop" class="detail-backdrop" onclick="closeDetail()"></div>
       <aside id="detailPanel" class="detail-panel" data-empty="true" aria-label="App details"></aside>
     </main>

@@ -1,6 +1,6 @@
 {
-  "name": "Wizard Apps Manager",
-  "short_name": "Wizard Apps",
+  "name": "Legacy apps",
+  "short_name": "Legacy apps",
   "id": "/apps/",
   "start_url": "/apps/",
   "scope": "/apps/",
