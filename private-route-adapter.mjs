@@ -16,16 +16,10 @@ const PORT = Number.parseInt(process.env.CLOUDFLARE_ROUTE_PORT || "8920", 10);
 const CONFIG_PATH = process.env.CLOUDFLARE_ROUTE_CONFIG || "/home/telos/apps/tailnet-app-manager/cloudflare-routes.json";
 const PWA_CATALOG_PATH = process.env.CLOUDFLARE_PWA_CATALOG || "/home/telos/apps/tailnet-app-manager/cloudflare-pwa-apps.json";
 const PWA_ICON_ROOT = process.env.CLOUDFLARE_PWA_ICON_ROOT || "/home/telos/apps/tailnet-app-manager/pwa-icons";
-const PUBLIC_ORIGIN = (process.env.CLOUDFLARE_PUBLIC_ORIGIN || "https://apps.wizard001.com").replace(/\/$/, "");
-// Every browser-facing origin this gateway answers on (primary first). Requests are answered on the
-// origin they arrived on, so a hostname change never strands a page on the other one.
-const PUBLIC_ORIGINS = new Set([PUBLIC_ORIGIN, ...String(process.env.CLOUDFLARE_PUBLIC_ORIGIN_ALIASES || "")
-  .split(",").map((value) => value.trim().replace(/\/$/, "")).filter(Boolean)]);
-
-function requestOrigin(request) {
-  const host = String(request.headers["x-forwarded-host"] || request.headers.host || "").split(",")[0].trim();
-  const candidate = `https://${host}`;
-  return PUBLIC_ORIGINS.has(candidate) ? candidate : PUBLIC_ORIGIN;
+const PUBLIC_ORIGIN = (process.env.CLOUDFLARE_PUBLIC_ORIGIN || "https://wizard.tailc0f369.ts.net").replace(/\/$/, "");
+// There is one browser-facing origin; old gateway names are not aliases.
+function requestOrigin(_request) {
+  return PUBLIC_ORIGIN;
 }
 const CANONICAL_ORIGIN_ROUTES = new Set(['/wizard-social', '/secure-intake']);
 const MAX_HTML_BYTES = 64 * 1024 * 1024;
@@ -85,19 +79,12 @@ function outgoingHeaders(request, route, target, websocket = false) {
     if (name.startsWith('cf-access-') || name.startsWith('tailscale-user-') ||
         name === 'x-private-peer' || name === 'cf-connecting-ip') delete headers[name];
   }
-  // Validate browser Origin at ingress, then bridge the legacy app allowlist.
-  // Signed-URL applications keep their canonical private Origin untouched.
-  // Apps that validate the canonical private Origin themselves (Secret Drop's exact-origin
-  // submission guard) receive it untouched; legacy apps still get the old allowlisted origin.
-  const keepOrigin = CANONICAL_ORIGIN_ROUTES.has(route.path);
-  if (headers.origin === publicOrigin && !keepOrigin) {
-    headers.origin = 'https://apps.wizard001.com';
-  }
-  if (!keepOrigin && headers.referer?.startsWith(publicOrigin + '/')) headers.referer = headers.referer.replace(publicOrigin, 'https://apps.wizard001.com');
-  const backendOrigin = keepOrigin || websocket ? publicOrigin : 'https://apps.wizard001.com';
-  headers.host = websocket || ['/nesquena', '/hermesUI'].includes(route.path) ? new URL(backendOrigin).host : target.host;
-  if (websocket && request.headers.origin) headers.origin = publicOrigin;
-  headers["x-forwarded-host"] = new URL(backendOrigin).host;
+  // Ingress validated the browser Origin. Preserve Origin and Referer exactly;
+  // HTTP, WebSocket, signed-URL and canonical-origin routes share one origin.
+  const canonicalHost = new URL(publicOrigin).host;
+  headers.host = websocket || ['/nesquena', '/hermesUI'].includes(route.path)
+    ? canonicalHost : target.host;
+  headers["x-forwarded-host"] = canonicalHost;
   headers["x-forwarded-proto"] = "https";
   headers["x-forwarded-prefix"] = route.path;
   if (!websocket) {
@@ -113,7 +100,6 @@ function rewriteLocation(location, route, target, publicOrigin = PUBLIC_ORIGIN) 
   if (!location) return location;
   try {
     const resolved = new URL(location, target);
-    if (resolved.origin === "https://apps.wizard001.com") return publicOrigin + resolved.pathname + resolved.search + resolved.hash;
     if (resolved.host !== target.host) return location;
     const targetBase = route.target.pathname.replace(/\/$/, "");
     const suffix = resolved.pathname.startsWith(targetBase) ? resolved.pathname.slice(targetBase.length) : resolved.pathname;

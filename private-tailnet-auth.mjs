@@ -2,6 +2,9 @@ import http from 'node:http';
 import net from 'node:net';
 import { pathToFileURL } from 'node:url';
 
+// The canonical private Wizard browser origin.
+export const PRIVATE_ORIGINS = new Set(String(process.env.WIZARD_PRIVATE_ORIGINS ||
+  'https://wizard.tailc0f369.ts.net').split(',').map(s => s.trim()).filter(Boolean));
 export function validPeer(ip) {
   return net.isIP(ip) === 4 ? /^100\./.test(ip) && +ip.split('.')[1] >= 64 && +ip.split('.')[1] <= 127
     : net.isIP(ip) === 6 && ip.toLowerCase().startsWith('fd7a:115c:a1e0:');
@@ -35,7 +38,7 @@ export function createAuthServer({lookup = ip => lookupPeer(ip, process.env.TAIL
     const ip = req.headers['x-private-peer'];
     if(typeof ip !== 'string' || !validPeer(ip)) return deny();
     const origin = req.headers.origin;
-    if(origin && origin !== 'https://private.wizard001.com') return deny();
+    if(origin && !PRIVATE_ORIGINS.has(origin)) return deny();
     if(req.headers['sec-fetch-site'] === 'cross-site') return deny();
     try {
       const login = principalFromWhois(await lookup(ip));
