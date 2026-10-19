@@ -19,7 +19,7 @@ test('canonical ingress preserves browser headers on all route classes', async t
   const port = probe.address().port;await new Promise(r=>probe.close(r));
   const routes = ['/plain','/nesquena','/hermesUI','/android-apps','/meditation','/video-editor','/cinequeue','/movies','/wizdom','/wizard-search','/wizard-calendar'];
   fs.writeFileSync(path.join(dir,'routes.json'),JSON.stringify({routes:Object.fromEntries(routes.map(r=>[r,{target:`http://127.0.0.1:${upstream.address().port}`}]))}));
-  fs.writeFileSync(path.join(dir,'missing.json'),JSON.stringify({apps:[]}));
+  fs.writeFileSync(path.join(dir,'missing.json'),JSON.stringify({apps:{}}));
   const env={...process.env,CLOUDFLARE_ROUTE_PORT:String(port),CLOUDFLARE_ROUTE_CONFIG:path.join(dir,'routes.json'),CLOUDFLARE_PWA_CATALOG:path.join(dir,'missing.json')};
   delete env.CLOUDFLARE_PUBLIC_ORIGIN;delete env.CLOUDFLARE_PUBLIC_ORIGIN_ALIASES;
   const child=spawn(process.execPath,[new URL('./private-route-adapter.mjs',import.meta.url).pathname],{env,stdio:['ignore','pipe','pipe']});
