@@ -252,6 +252,9 @@
     "/mizel": {
       "target": "http://127.0.0.1:8790"
     },
+    "/mizel-desktop": {
+      "target": "http://127.0.0.1:8987"
+    },
     "/wizard-music-home": {
       "target": "http://127.0.0.1:8991"
     },
